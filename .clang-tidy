@@ -1,0 +1,39 @@
+---
+# clang-tidy configuration for C projects
+#
+# Enables all checks by default, then disables C++-only and irrelevant checks.
+# For available checks see: https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
+Checks: >
+  *,
+  -abseil-*,
+  -altera-*,
+  -modernize-*,
+  -google-build-explicit-make-pair,
+  -google-build-namespaces,
+  -google-default-arguments,
+  -google-explicit-constructor,
+  -google-global-names-in-headers,
+  -google-objc-avoid-nsautoreleasepool,
+  -google-objc-function-naming,
+  -google-objc-global-variable-naming,
+  -google-readability-avoid-underscore-in-googletest-name,
+  -google-readability-function-size,
+  -google-readability-namespace-comments,
+  -google-readability-too-many-brackets,
+  -google-upgrade-qualified-call,
+  -llvmlib-*,
+  -llvm-*,
+  -readability-function-cognitive-complexity,
+  -readability-function-size,
+  -readability-identifier-length,
+
+# Treat all warnings as errors
+WarningsAsErrors: '*'
+
+# Header filter regex — match project source directories
+HeaderFilterRegex: '^(apps|tests)/'
+
+# Analysis options
+AnalyzeTemporaryDtors: false
+FormatStyle: LLVM

@@ -1,0 +1,125 @@
+####################################
+# Load Preset Configuration
+####################################
+
+import %workspace%/tools/preset.bazelrc
+
+####################################
+# Disk Cache & Repository Cache
+####################################
+# Initialize with: bash tools/setup/init_bazel_env.sh
+
+# Repository cache - stores downloaded dependencies
+common --repository_cache=~/.bazel/repo-cache
+# Persistent build artifact cache (optional, for CI/local development)
+build --disk_cache=~/.bazel/build-cache
+
+# Optional: Distribution mirror for offline builds
+# common --distdir=~/.bazel/distdir
+
+####################################
+# Bazel 9 Optimizations
+####################################
+
+# Skyfocus für reduzierte Memory-Usage (experimentell)
+# Hinweis: kann in Bazel 9 zu internen Crashes führen. Optional aktivieren via:
+#   bazel build --config=skyfocus <target>
+build:skyfocus --experimental_enable_skyfocus
+
+# Action-Cache Garbage-Collection (Idle-Server bereinigt alten Cache)
+common --experimental_action_cache_gc_max_age=7d
+
+# External include paths für -isystem bei externen Deps
+build --features=external_include_paths
+
+# parse_headers in exec-Config erzeugt CppCompile-Aktionen für Header
+build --host_features=-parse_headers
+
+# Repo-Contents-Cache (beschleunigt fetch bei reproduzierbaren Repos)
+common --repo_contents_cache=~/.bazel/repo-contents-cache
+
+# Neuer Query-Operator: executables()
+# Nutzbar mit: bazel query 'executables(//...)'
+
+####################################
+# Project-Specific Configuration
+####################################
+
+common --color=yes
+common --curses=yes
+
+# Default build platform for this project (macOS ARM64)
+build --platforms=//config/platforms:macos_arm64_platform
+
+# Build metadata
+build --workspace_status_command=tools/scripts/workspace_status.sh
+
+####################################
+# Debug Build (with ASAN/UBSAN)
+####################################
+
+build:debug --compilation_mode=dbg
+build:debug --strip=never
+build:debug --copt=-O0
+build:debug --copt=-g
+build:debug --copt=-fno-omit-frame-pointer
+build:debug --copt=-fsanitize=address
+build:debug --copt=-fsanitize=undefined
+build:debug --linkopt=-fsanitize=address
+build:debug --linkopt=-fsanitize=undefined
+build:debug --define=DEBUG=1
+build:debug --features=layering_check
+build:debug --sandbox_debug
+
+test:debug --config=debug
+
+####################################
+# Release Build (Optimized)
+####################################
+
+build:opt --compilation_mode=opt
+build:opt --strip=always
+build:opt --copt=-O3
+build:opt --copt=-march=native
+build:opt --define=NDEBUG=1
+
+####################################
+# Profile/Report Build
+####################################
+
+build:profile --compilation_mode=opt
+build:profile --copt=-O2
+build:profile --copt=-g
+build:profile --copt=-ftime-report
+build:profile --profile=profile.gz
+build:profile --generate_json_trace_profile
+
+####################################
+# Optional SIMD Prototype
+####################################
+
+# Aktiviert den experimentellen SIMD-Blockfilter im CSV-Scanner.
+# Standard bleibt der stabile Word-Fast-Path ohne SIMD.
+build:simd_prototype --define=csv_fast_simd_experiment=1
+test:simd_prototype --define=csv_fast_simd_experiment=1
+run:simd_prototype --define=csv_fast_simd_experiment=1
+
+####################################
+# Code Coverage (LLVM Coverage)
+####################################
+
+coverage --combined_report=lcov
+coverage --instrumentation_filter="^//apps[:/]"
+coverage --experimental_use_llvm_covmap
+coverage --experimental_generate_llvm_lcov
+coverage --copt=-fcoverage-compilation-dir=.
+
+####################################
+# Depend on What You Use (DWYU)
+####################################
+
+build:dwyu --aspects=//tools:dwyu.bzl%dwyu
+build:dwyu --output_groups=dwyu
+build:linux_llvm --cpu=x86_64
+
+test:linux_llvm --config=linux_llvm

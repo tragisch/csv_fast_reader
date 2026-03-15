@@ -1,0 +1,35 @@
+---
+Language: C
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Linux
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+SpaceAfterCStyleCast: false
+PointerAlignment: Right
+
+---
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Linux
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+SpaceAfterCStyleCast: false
+PointerAlignment: Right

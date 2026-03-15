@@ -1,0 +1,146 @@
+"""MODULE.bazel — Central dependency management via Bzlmod (Bazel 9+)."""
+
+module(
+    name = "csv_fast",
+    version = "0.1.0",
+)
+
+######################################################################
+# Registries (Central Bazel Package Registries)
+######################################################################
+
+# common --registry=file:///Users/uwe/Documents/Programmierung/Bazel-Registry
+# common --registry=https://raw.githubusercontent.com/tragisch/bazel-registry/main
+# common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main
+# common --registry=https://bcr.bazel.build
+
+######################################################################
+# Bazel Configuration Management
+######################################################################
+
+# Auto-generate optimized bazelrc from best practices
+# To update: bazel run @@//tools:preset.update
+bazel_dep(name = "bazelrc-preset.bzl", version = "0.4.2")
+
+######################################################################
+# Environment & Tooling
+######################################################################
+
+# Environment variable management
+bazel_dep(name = "bazel_env.bzl", version = "0.5.0")
+
+# Hub-based dependency management for tools
+bazel_dep(name = "rules_multitool", version = "1.9.0")
+
+multitool = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
+multitool.hub(lockfile = "//tools:tools.lock.json")
+use_repo(multitool, "multitool")
+
+register_toolchains("@multitool//toolchains:all")
+
+######################################################################
+# Core Build Tools & Platforms
+######################################################################
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "cgrindel_bazel_starlib", version = "0.25.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "depend_on_what_you_use", version = "0.12.0")
+bazel_dep(name = "rules_license", version = "1.0.0")
+
+######################################################################
+# Formatting (clang-format + buildifier)
+######################################################################
+
+bazel_dep(name = "aspect_rules_lint", version = "2.0.0")
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2")
+bazel_dep(name = "buildozer", version = "8.2.1")
+
+######################################################################
+# Developer Tools (BCR)
+######################################################################
+
+bazel_dep(name = "rules_java", version = "9.0.3")
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+######################################################################
+# LLVM Toolchain (for consistent C/C++ across macOS & Linux)
+######################################################################
+
+bazel_dep(name = "toolchains_llvm", version = "1.6.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(llvm_version = "20.1.0")
+use_repo(llvm, "llvm_toolchain")
+use_repo(llvm, "llvm_toolchain_llvm")
+
+register_toolchains("@llvm_toolchain//:all")
+
+######################################################################
+# Apple Support (for macOS system frameworks)
+######################################################################
+
+bazel_dep(name = "apple_support", version = "1.24.3")
+
+apple_cc_configure = use_extension(
+    "@apple_support//crosstool:setup.bzl",
+    "apple_cc_configure_extension",
+)
+use_repo(apple_cc_configure, "local_config_apple_cc", "local_config_apple_cc_toolchains")
+
+register_toolchains("@local_config_apple_cc_toolchains//:all")
+
+######################################################################
+# Testing & Development Tools
+######################################################################
+
+bazel_dep(name = "google_benchmark", version = "1.9.2")
+bazel_dep(name = "rules_foreign_cc", version = "0.14.0")
+
+#############################
+# Coverage Report (bazelcov)
+#############################
+
+# https://github.com/phst/bazelcov
+bazel_dep(name = "phst_bazelcov", version = "0", dev_dependency = True)
+git_override(
+    module_name = "phst_bazelcov",
+    commit = "9d1535d4659982348dbe7f99fe7a6bea906f4a66",
+    remote = "https://github.com/phst/bazelcov.git",
+)
+
+#############################
+# Compile Commands Extractor for Bazel (wolfd)
+#############################
+
+# https://github.com/wolfd/bazel-compile-commands
+bazel_dep(name = "wolfd_bazel_compile_commands", version = "0.5.2", dev_dependency = True)
+
+######################################################################
+# Load external non-Bazel libraries (Unity, dbg-macro, etc)
+######################################################################
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+# unity - A simple unit testing library for C.
+http_archive(
+    name = "Unity",
+    build_file = "@//:third_party/Unity.BUILD",
+    sha256 = "4598298723ecca1f242b8c540a253ae4ab591f6810cbde72f128961007683034",
+    strip_prefix = "Unity-2.5.2",
+    urls = [
+        "https://github.com/ThrowTheSwitch/Unity/archive/refs/tags/v2.5.2.zip",
+    ],
+)
+
+# dbg-macro: A simple debug macro for C.
+git_repository(
+    name = "dbg_macro",
+    build_file = "@//:third_party/dbg_macro.BUILD",
+    remote = "https://github.com/eerimoq/dbg-macro.git",
+    tag = "0.13.0",
+)

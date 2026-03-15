@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# Copyright 2018 The Bazel Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ---------------------------------------------------------------------------
+# Modified 2025 by @tragisch <https://github.com/tragisch>
+# SPDX-License-Identifier: MIT
+
+# Installs files built by bazel.
+#
+@@GENERATED_WARNING@@ ; exit 1
+#
+# 1.  To use this template, add installer() rule from installer/def.bzl
+#     to your BUILD file.
+# 2.  To install the target under /usr/local/bin, run:
+#     bazel run //path/to/your:installer_target -- /usr/local/bin
+#
+#     To use sudo, run:
+#     bazel run //path/to/your:installer_target -- -s /usr/local/bin
+
+set -o pipefail -o errexit -o nounset
+
+# Fallback: set RUNFILES_DIR if not provided by Bazel
+if [[ -z "${RUNFILES_DIR:-}" ]]; then
+  RUNFILES_DIR="$0.runfiles"
+fi
+
+# --- begin runfiles.bash initialization v2 ---
+# Copy-pasted from the Bazel Bash runfiles library v2.
+f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=;
+# --- end runfiles.bash initialization v2 ---
+
+# Template variables:
+# Array of paths of files
+declare -r -a SOURCE_FILES=@@SOURCE_FILES@@
+declare -a TARGET_NAMES
+declare -r -a TARGET_NAMES_ORIG=@@TARGET_NAMES@@
+for name in "${TARGET_NAMES_ORIG[@]}"; do
+  case "$name" in
+    *.a|*.so|*.dylib) TARGET_NAMES+=("lib/${name##*/}") ;;
+    *.h)              TARGET_NAMES+=("include/${name##*/}") ;;
+    *)                TARGET_NAMES+=("${name##*/}") ;;
+  esac
+done
+# Set executable mode of files
+declare -r EXECUTABLE=@@EXECUTABLE@@
+# Fully specified bazel label of INSTALLER_LABEL installer() rule.
+declare -r INSTALLER_LABEL=@@INSTALLER_LABEL@@
+declare -r SYSTEM_INTEGRATION=@@SYSTEM_INTEGRATION@@
+# Number of files.
+declare -r -i N_FILES="${#SOURCE_FILES[@]}"
+
+function error() {
+  echo >&2 "installer.bash ERROR: $@"
+  usage
+  exit 1
+}
+
+function usage() {
+  echo >&2 "Usage: bazel run ${INSTALLER_LABEL} [-c opt] [--] [-s] [--] /INSTALL_PREFIX"
+}
+
+# Checks that all template variables have been substituted.
+function verify_templates() {
+  if [[ "${SOURCE_FILES[@]:0:2}" =~ ^@@ ]] ||
+    [[ "${TARGET_NAMES[@]:0:2}" =~ ^@@ ]] ||
+    [[ "${INSTALLER_LABEL:0:2}" =~ ^@@ ]]; then
+    error "template substitution failed"
+  fi
+
+  if [[ "${#SOURCE_FILES[@]}" != "${#TARGET_NAMES[@]}" ]]; then
+    error "the number of source files is different thant the number target names"
+  fi
+}
+
+# Checks that each path in $SOURCE_FILES[@] is a readable file.
+function check_sources() {
+  for source in "${SOURCE_FILES[@]}"; do
+    resolved="$(rlocation ${source})"
+    if ! [[ -r "${resolved}" ]]; then
+      error "Can't read '${source}' resolved to '${resolved}'"
+    fi
+  done
+}
+
+# Installs $i-th file in $prefix.
+function install_file() {
+  local prefix="$1"
+  local i="$2"
+  local sudo="$3"
+  local source="$(rlocation ${SOURCE_FILES[${i}]})"
+  local target="${TARGET_NAMES[${i}]}"
+  local target_dir
+  target_dir="$(dirname -- "${prefix}/${target}")"
+  local target_name
+  target_name="$(basename -- "${target}")"
+  local target_mode
+  if [[ "${EXECUTABLE}" = "True" ]]; then
+    target_mode=755
+  else
+    target_mode=644
+  fi
+
+  echo "Installing '${source}' → '${target_dir}/${target_name}'"
+
+  [[ -d "${target_dir}" ]] || \
+    $sudo mkdir -p "${target_dir}"
+
+  $sudo install -m "${target_mode}" \
+    -T -- "${source}" "${target_dir}/${target_name}"
+}
+
+function main() {
+  verify_templates
+
+  local g_flag=''
+  local s_flag=''
+  while getopts ':ghs' flag; do
+    case "${flag}" in
+      g) g_flag='' ;;  # Ignored - debug builds flag
+      s) s_flag='sudo' ;;  # Run with sudo
+      h) usage; exit 0 ;;
+      *) error "Unexpected option '-${OPTARG}'"   ;;
+    esac
+  done
+
+  if [[ -z "${OPTIND:-}" ]] || (($OPTIND > $#)); then
+    error "INSTALL_PREFIX wasn't specified"
+  fi
+  local prefix="${!OPTIND}"
+
+  # Convert Windows path to Unix path
+  if command -v cygpath &> /dev/null; then
+    prefix="$(cygpath $prefix)"
+  fi
+
+  if [[ "${prefix:0:1}" != "/" ]]; then
+    error "INSTALL_PREFIX must be an absolute path"
+  fi
+
+# Optional: install LICENSE.txt file if present in runfiles
+license_path="$(rlocation _main/LICENSE.txt)"
+if [[ -f "$license_path" ]]; then
+  echo "Installing LICENSE.txt → ${prefix}/LICENSE.txt"
+  mkdir -p "${prefix}"
+  install -m 644 -T -- "$license_path" "${prefix}/LICENSE.txt"
+fi
+
+  check_sources
+  local i
+  for ((i=0; i<${N_FILES}; i++)); do
+    install_file "${prefix}" "${i}" "${s_flag}"
+  done
+
+  if [[ "${SYSTEM_INTEGRATION}" == "True" ]]; then
+    echo "Creating symlinks in standard system directories..."
+
+    if [[ -d "${prefix}/lib" ]]; then
+      for libfile in "${prefix}/lib/"*.a; do
+        [[ -e "$libfile" ]] || continue
+        target="/usr/local/lib/$(basename "$libfile")"
+        echo "Linking $libfile → $target"
+        sudo ln -sf "$libfile" "$target"
+      done
+    fi
+
+    if [[ -d "${prefix}/include" ]]; then
+      for header in "${prefix}/include/"*.h; do
+        [[ -e "$header" ]] || continue
+        target="/usr/local/include/$(basename "$header")"
+        echo "Linking $header → $target"
+        sudo ln -sf "$header" "$target"
+      done
+    fi
+  fi
+}
+
+main "$@"

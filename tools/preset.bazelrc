@@ -1,0 +1,79 @@
+# Generated Bazel Configuration Presets
+# This file contains optimized Bazel settings for development and CI
+# To update this file, run: bazel run //:preset.update
+
+####################################
+# Platform-Specific Configuration
+####################################
+
+# Enable OS-specific config overrides
+# This allows Bazel to automatically apply build:macos, build:linux, etc.
+common --enable_platform_specific_config
+
+####################################
+# Development Quality of Life
+####################################
+
+# Avoid creating runfiles tree until needed (saves disk space)
+common --nobuild_runfile_links
+
+# Better output formatting for queries
+query --output=label_kind
+query --noimplicit_deps
+
+####################################
+# CI/Testing Configuration
+####################################
+
+# Always run tests fresh (no cached results)
+common:ci --nocache_test_results
+common:ci --announce_rc
+
+# Verbose test failures and continued execution
+test --verbose_failures
+test --keep_going
+test --test_output=all
+
+####################################
+# macOS Configuration
+####################################
+
+build:macos --cxxopt=-std=c++20
+
+####################################
+# Linux Configuration
+####################################
+
+build:linux --cxxopt=-std=c++20
+build:linux --action_env=CC=clang
+build:linux --action_env=CXX=clang++
+
+####################################
+# Windows Configuration
+####################################
+
+build:windows --cxxopt=/std:c++20
+build:windows --incompatible_enable_cc_toolchain_resolution
+
+####################################
+# Performance & Optimization
+####################################
+
+# Avoid re-checking external repository files for modifications
+common --noexperimental_check_external_repository_files
+
+# Enable parallel builds
+common --jobs=auto
+
+# Heap dump on out-of-memory
+build --heap_dump_on_oom
+
+####################################
+# Output & Reporting
+####################################
+
+# Suppress most output for cleaner logs
+# Uncomment to enable: build --output_filter=^$
+
+# Show detailed event stream for profiling
+# Uncomment to enable: build --experimental_json_trace_export=trace.json
