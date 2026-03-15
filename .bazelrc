@@ -48,8 +48,12 @@ common --repo_contents_cache=~/.bazel/repo-contents-cache
 common --color=yes
 common --curses=yes
 
-# Default build platform for this project (macOS ARM64)
-build --platforms=//config/platforms:macos_arm64_platform
+# Default build platform for this project follows the host OS.
+# `common --enable_platform_specific_config` in `tools/preset.bazelrc`
+# automatically activates the matching `build:<os>` block.
+build:macos --platforms=//config/platforms:macos_arm64_platform
+build:linux --platforms=//config/platforms:linux_x86_64_platform
+build:windows --platforms=//config/platforms:windows_x86_64_platform
 
 # Build metadata
 build --workspace_status_command=tools/scripts/workspace_status.sh
