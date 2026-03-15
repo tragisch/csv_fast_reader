@@ -9,11 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-14
-            bazel_platform: //config/platforms:macos_arm64_platform
-          - os: ubuntu-24.04
-            bazel_platform: //config/platforms:linux_x86_64_platform
+        os: [macos-14, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -23,13 +19,13 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.18.0
 
       - name: Build library
-        run: bazel build --platforms=${{ matrix.bazel_platform }} //apps/csv_fast:csv_fast
+        run: bazel build //apps/csv_fast:csv_fast
 
       - name: Test parser
-        run: bazel test --config=ci --platforms=${{ matrix.bazel_platform }} //tests:test_csv
+        run: bazel test //tests:test_csv
 
       - name: Check formatting
         run: |
-          bazel run --platforms=${{ matrix.bazel_platform }} //tools/format:format
+          bazel run //tools/format:format
           git diff --exit-code -- .
 
