@@ -11,6 +11,13 @@
  * work. See the LICENSE file in the project root for license details.
  */
 
+/* Ensure POSIX/BSD extensions (madvise, etc.) are visible with strict -std=c11 on glibc */
+#if defined(__linux__)
+#if !defined(_DEFAULT_SOURCE)
+#define _DEFAULT_SOURCE
+#endif
+#endif
+
 #if defined(__APPLE__) || defined(__linux__) || defined(__unix__)
 #define CSV_FAST_PLATFORM_POSIX
 #endif
