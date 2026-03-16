@@ -1,6 +1,6 @@
 # csv_fast
 
-`csv_fast` is a small CSV parsing library in C.
+`csv_fast` is a small and fast CSV parsing library in C.
 It is built with Bazel and currently targets **macOS** and **Linux**.
 
 ## Build

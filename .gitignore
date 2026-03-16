@@ -142,3 +142,5 @@ benchmarks/results/*
 !benchmarks/results/
 !benchmarks/results/README.md
 MODULE.bazel.lock
+/external/
+/external/*

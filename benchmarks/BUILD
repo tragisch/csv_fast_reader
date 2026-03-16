@@ -12,3 +12,14 @@ cc_binary(
     ],
     deps = ["//apps/csv_fast"],
 )
+
+cc_binary(
+    name = "csv_parser_benchmark",
+    srcs = ["csv_parser_benchmark.cc"],
+    data = [
+        "//data:cbp23co.csv",
+        "//data:star2002-full.csv",
+        "//data:zbp23detail.csv",
+    ],
+    deps = ["//third_party/csv-parser:csv-parser"],
+)
