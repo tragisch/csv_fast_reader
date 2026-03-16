@@ -1,7 +1,5 @@
 # csv_fast
 
-[![CI](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml)
-
 `csv_fast` is a small and fast CSV parsing library in C.
 
 - build system: Bazel
@@ -84,3 +82,4 @@ int main(void)
 - `benchmarks/` – benchmarks
 - `tools/install/` – Bazel installer
 
+[![CI](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml)
