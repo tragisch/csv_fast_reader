@@ -73,7 +73,7 @@ function error() {
 }
 
 function usage() {
-  echo >&2 "Usage: bazel run ${INSTALLER_LABEL} [-c opt] [--] [-s] [--] /INSTALL_PREFIX"
+  echo >&2 "Usage: bazel run ${INSTALLER_LABEL} [--] [-s] [--mode=standard|bundle] -- /INSTALL_PREFIX"
 }
 
 # Checks that all template variables have been substituted.
@@ -97,6 +97,51 @@ function check_sources() {
       error "Can't read '${source}' resolved to '${resolved}'"
     fi
   done
+}
+
+# Builds a single static archive from all static libraries listed in SOURCE_FILES.
+function create_bundle_library() {
+  local prefix="$1"
+  local sudo="$2"
+  local -a archives=()
+  local i
+  for ((i=0; i<${N_FILES}; i++)); do
+    local target="${TARGET_NAMES[${i}]}"
+    if [[ "${target}" == lib/*.a ]]; then
+      archives+=("$(rlocation ${SOURCE_FILES[${i}]})")
+    fi
+  done
+
+  if ((${#archives[@]} == 0)); then
+    error "bundle mode requested but no static archives were found"
+  fi
+
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  local bundle_tmp="${tmp_dir}/libmatrix_full.a"
+  if command -v libtool >/dev/null 2>&1; then
+    libtool -static -o "${bundle_tmp}" "${archives[@]}"
+  elif command -v ar >/dev/null 2>&1; then
+    local mri="${tmp_dir}/bundle.mri"
+    {
+      echo "CREATE ${bundle_tmp}"
+      for archive in "${archives[@]}"; do
+        echo "ADDLIB ${archive}"
+      done
+      echo "SAVE"
+      echo "END"
+    } > "${mri}"
+    ar -M < "${mri}"
+  else
+    error "bundle mode requires 'libtool' (macOS) or 'ar' (Linux)"
+  fi
+
+  [[ -d "${prefix}/lib" ]] || \
+    $sudo mkdir -p "${prefix}/lib"
+  echo "Installing bundled static archive → ${prefix}/lib/libmatrix_full.a"
+  $sudo install -m 644 -T -- "${bundle_tmp}" "${prefix}/lib/libmatrix_full.a"
+  rm -rf -- "${tmp_dir}"
 }
 
 # Installs $i-th file in $prefix.
@@ -129,21 +174,53 @@ function install_file() {
 function main() {
   verify_templates
 
-  local g_flag=''
+  local mode='standard'
   local s_flag=''
-  while getopts ':ghs' flag; do
-    case "${flag}" in
-      g) g_flag='' ;;  # Ignored - debug builds flag
-      s) s_flag='sudo' ;;  # Run with sudo
-      h) usage; exit 0 ;;
-      *) error "Unexpected option '-${OPTARG}'"   ;;
+  while (($#)); do
+    case "$1" in
+      -g)
+        shift  # Ignored - debug builds flag
+        ;;
+      -s)
+        s_flag='sudo'
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      --mode=standard|--mode=bundle)
+        mode="${1#--mode=}"
+        shift
+        ;;
+      --mode)
+        if (($# < 2)); then
+          error "Missing value for --mode. Use 'standard' or 'bundle'"
+        fi
+        mode="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        error "Unexpected option '$1'"
+        ;;
+      *)
+        break
+        ;;
     esac
   done
 
-  if [[ -z "${OPTIND:-}" ]] || (($OPTIND > $#)); then
+  if [[ "${mode}" != "standard" && "${mode}" != "bundle" ]]; then
+    error "Invalid mode '${mode}'. Use 'standard' or 'bundle'"
+  fi
+
+  if (($# < 1)); then
     error "INSTALL_PREFIX wasn't specified"
   fi
-  local prefix="${!OPTIND}"
+  local prefix="$1"
 
   # Convert Windows path to Unix path
   if command -v cygpath &> /dev/null; then
@@ -154,19 +231,18 @@ function main() {
     error "INSTALL_PREFIX must be an absolute path"
   fi
 
-# Optional: install LICENSE.txt file if present in runfiles
-license_path="$(rlocation _main/LICENSE.txt)"
-if [[ -f "$license_path" ]]; then
-  echo "Installing LICENSE.txt → ${prefix}/LICENSE.txt"
-  mkdir -p "${prefix}"
-  install -m 644 -T -- "$license_path" "${prefix}/LICENSE.txt"
-fi
-
   check_sources
   local i
   for ((i=0; i<${N_FILES}; i++)); do
+    if [[ "${mode}" == "bundle" && "${TARGET_NAMES[${i}]}" == lib/*.a ]]; then
+      continue
+    fi
     install_file "${prefix}" "${i}" "${s_flag}"
   done
+
+  if [[ "${mode}" == "bundle" ]]; then
+    create_bundle_library "${prefix}" "${s_flag}"
+  fi
 
   if [[ "${SYSTEM_INTEGRATION}" == "True" ]]; then
     echo "Creating symlinks in standard system directories..."

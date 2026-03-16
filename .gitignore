@@ -135,12 +135,8 @@ _archive/
 .vscode/
 docs/
 docs/*
-benchmarks/results/*
-!benchmarks/BUILD
-!benchmarks/README.md
-!benchmarks/csv_benchmark.c
-!benchmarks/results/
-!benchmarks/results/README.md
+/benchmarks/*
+/benchmarks/
 MODULE.bazel.lock
 /external/
 /external/*

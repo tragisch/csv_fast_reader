@@ -17,3 +17,9 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "csv_fast_headers",
+    srcs = ["csv.h"],
+    visibility = ["//visibility:public"],
+)

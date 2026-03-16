@@ -1,23 +1,37 @@
 # csv_fast
 
-`csv_fast` is a small and fast CSV parsing library in C.
-It is built with Bazel and currently targets **macOS** and **Linux**.
+[![CI](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/tragisch/csv_fast_reader/actions/workflows/ci.yml)
 
-## Build
+`csv_fast` is a small and fast CSV parsing library in C.
+
+- build system: Bazel
+- platforms: macOS and Linux
+- focus: simple reader API with tested handling for quotes, escaped quotes, CRLF and embedded newlines
+
+## Quick start
+
+Build the library:
 
 ```bash
 bazel build //apps/csv_fast:csv_fast
 ```
 
-Run the parser tests with:
+Run the tests:
 
 ```bash
 bazel test //tests:test_csv
 ```
 
-## Recommended API
+Install:
 
-The preferred API is the status-based reader interface from `apps/csv_fast/csv.h`:
+```bash
+bazel run //:install_csv_fast -- /usr/local
+```
+The installer places headers under `include/` and libraries under `lib/`.
+
+## API
+
+The recommended API is defined in `apps/csv_fast/csv.h`:
 
 - `csv_reader_open()`
 - `csv_reader_open_with_options()`
@@ -25,7 +39,7 @@ The preferred API is the status-based reader interface from `apps/csv_fast/csv.h
 - `csv_reader_next_col()`
 - `csv_reader_close()`
 
-Example:
+Minimal example:
 
 ```c
 #include <stdio.h>
@@ -56,14 +70,17 @@ int main(void)
 }
 ```
 
-### Lifetime rules
+## Important rules
 
-- `row.ptr` stays valid until the next `csv_reader_next_row()` call.
-- `field.ptr` stays valid until the next `csv_reader_next_row()` call.
-- The first `csv_reader_next_col()` call for a row needs that row.
-- Later `csv_reader_next_col()` calls for the same row use `NULL`.
+- `row.ptr` remains valid until the next call to `csv_reader_next_row()`.
+- `field.ptr` remains valid until the next call to `csv_reader_next_row()`.
+- The first call to `csv_reader_next_col()` for a row needs that row as an argument.
+- Later calls for the same row use `NULL`.
 
-## Notes
+## Project structure
 
-- Quoted fields, escaped quotes, CRLF input and embedded newlines are covered by tests.
-- Benchmarks live under `benchmarks/` (`benchmarks/csv_benchmark.c` for the runner, `benchmarks/results/` for local outputs), but the main focus of this project is the parsing API.
+- `apps/csv_fast/` – library
+- `tests/` – Unity tests
+- `benchmarks/` – benchmarks
+- `tools/install/` – Bazel installer
+
