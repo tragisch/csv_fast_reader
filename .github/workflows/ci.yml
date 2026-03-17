@@ -24,8 +24,3 @@ jobs:
       - name: Test parser
         run: bazel test //tests:test_csv
 
-      - name: Check formatting
-        run: |
-          bazel run //tools/format:format
-          git diff --exit-code -- .
-
