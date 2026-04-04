@@ -21,10 +21,10 @@ bazel test //tests:test_csv
 
 ## Benchmarks
 
-Die Benchmarks verwenden drei Real-World-Datensätze, die **nicht** im Repository enthalten sind.
-Lade sie herunter und lege sie unter `data/` ab:
+The benchmarks use three real-world datasets that are **not** included in the repository.
+Download them and place them in `data/`:
 
-| Datei               | Quelle                                                                                                              |
+| File                | Source                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `cbp23co.csv`       | [Census Bureau – County Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/cbp/2023-cbp.html)   |
 | `zbp23detail.csv`   | [Census Bureau – ZIP Code Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/zbp/2023-zbp.html) |
@@ -35,7 +35,7 @@ bazel run //benchmarks:csv_benchmark -- --suite real
 bazel run //benchmarks:csv_parser_benchmark -- --suite real
 ```
 
-Die C++-Vergleichsbenchmarks verwenden `csv-parser` und `rapidcsv`; der FastCSV-Benchmark verwendet `de.siegmar:fastcsv:4.1.1` und wird beim ersten Build reproduzierbar aus Maven Central geladen.
+The C++ comparison benchmarks use `csv-parser`. 
 
 ## Install
 
