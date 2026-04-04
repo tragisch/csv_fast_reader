@@ -24,18 +24,15 @@ bazel test //tests:test_csv
 Die Benchmarks verwenden drei Real-World-Datensätze, die **nicht** im Repository enthalten sind.
 Lade sie herunter und lege sie unter `data/` ab:
 
-| Datei | Quelle |
-|---|---|
-| `cbp23co.csv` | [Census Bureau – County Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/cbp/2023-cbp.html) |
-| `zbp23detail.csv` | [Census Bureau – ZIP Code Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/zbp/2023-zbp.html) |
-| `star2002-full.csv` | [LBNL / FastBit – STAR 2000](http://sdm.lbl.gov/fastbit/data/star2000.csv.gz) |
+| Datei               | Quelle                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `cbp23co.csv`       | [Census Bureau – County Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/cbp/2023-cbp.html)   |
+| `zbp23detail.csv`   | [Census Bureau – ZIP Code Business Patterns 2023](https://www.census.gov/data/datasets/2023/econ/zbp/2023-zbp.html) |
+| `star2002-full.csv` | [LBNL / FastBit – STAR 2000](http://sdm.lbl.gov/fastbit/data/star2000.csv.gz)                                       |
 
 ```bash
 bazel run //benchmarks:csv_benchmark -- --suite real
 bazel run //benchmarks:csv_parser_benchmark -- --suite real
-bazel run //benchmarks:libcsv_benchmark -- --suite real
-bazel run //benchmarks:rapidcsv_benchmark -- --suite real
-bazel run //benchmarks:fastcsv_benchmark -- --suite real
 ```
 
 Die C++-Vergleichsbenchmarks verwenden `csv-parser` und `rapidcsv`; der FastCSV-Benchmark verwendet `de.siegmar:fastcsv:4.1.1` und wird beim ersten Build reproduzierbar aus Maven Central geladen.
@@ -50,7 +47,7 @@ Headers are installed to `include/` and the library to `lib/`.
 
 ## API
 
-Main functions:
+Main reader functions:
 
 - `csv_reader_open()`
 - `csv_reader_open_with_options()`
@@ -60,6 +57,18 @@ Main functions:
 - `csv_reader_first_col()`
 - `csv_reader_next_col_in_row()`
 - `csv_reader_close()`
+
+Main writer functions:
+
+- `csv_writer_open()`
+- `csv_writer_open_with_options()`
+- `csv_writer_open_stream()`
+- `csv_writer_open_stream_with_options()`
+- `csv_writer_field()`
+- `csv_writer_field_str()`
+- `csv_writer_end_row()`
+- `csv_writer_flush()`
+- `csv_writer_close()`
 
 Example:
 
