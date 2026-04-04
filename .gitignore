@@ -1,0 +1,72 @@
+# Native build artifacts
+*.a
+*.app
+*.d
+*.dll
+*.dylib
+*.exe
+*.gcda
+*.gcno
+*.gcov
+*.lib
+*.o
+*.obj
+*.out
+*.profdata
+*.profraw
+*.so
+*.so.*
+*.dSYM/
+
+# Bazel outputs
+/bazel-*
+/bazel-bin
+/bazel-out
+/bazel-testlogs
+/output/
+user.bazelrc
+compile_commands.json
+compile_flags.txt
+MODULE.bazel.lock
+
+# Editors and local tooling
+.history/
+/.vscode/
+*.code-workspace
+/.idea/
+/.vs/
+
+# Environment and caches
+.env
+.env.*
+.envrc
+.cache/
+.direnv/
+
+# Local data and generated outputs
+/coverage/
+/data/*.csv
+/lib/
+/share/
+/benchmarks/results/
+
+# local gihub skills
+/.github/copilot/
+/.github/copilot/skills/
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Temporary files
+/tmp/
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.#*
